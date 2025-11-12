@@ -7,7 +7,7 @@ A comprehensive GUI application combining local and web security features, built
 > **Milestone:** Unified MS1+MS2  
 > **Authors:** Maricon Caluya and Jannine Claire Celocia  
 > **Repositories:**
-> - [MS1: Web Security](https://github.com/your-repo/SSP-MS1)
+> - [MS1: Web Security](https://github.com/JCCelocia/SSP-MS1)
 > - [MS2: Local Security](https://github.com/JCCelocia/SSP-MS2)
 
 ---
