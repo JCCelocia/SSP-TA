@@ -117,8 +117,8 @@ psutil>=5.8.0  # Improved network interface information
 
 ### 1. Clone Repository
 ```bash
-git clone <repository-url>
-cd unified-security-toolkit
+git clone https://github.com/JCCelocia/SSP-TA
+cd SSP-TA
 ```
 
 ### 2. Install Core Dependencies
