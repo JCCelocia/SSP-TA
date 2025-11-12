@@ -117,7 +117,7 @@ psutil>=5.8.0  # Improved network interface information
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/JCCelocia/SSP-TA
+git clone https://github.com/JCCelocia/SSP-TA.git
 cd SSP-TA
 ```
 
