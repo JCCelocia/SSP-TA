@@ -4,7 +4,7 @@ A comprehensive GUI application combining local and web security features, built
 
 > **Academic Project**  
 > **Course:** MO-IT142 - Security Script Programming  
-> **Milestone:** Unified MS1+MS2  
+> **Milestone:** Terminal Assessment  
 > **Authors:** Maricon Caluya and Jannine Claire Celocia  
 > **Repositories:**
 > - [MS1: Web Security](https://github.com/JCCelocia/SSP-MS1)
