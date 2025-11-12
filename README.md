@@ -555,4 +555,4 @@ Users are responsible for complying with all applicable laws and regulations.
 **Unified Project:** Combining SSP MS1 and SSP MS2 making SSP Terminal Assessment
 **Year:** 2025
 
-**Repository:** [https://github.com/JCCelocia/SSP-TA.git]
+**Repository:** https://github.com/JCCelocia/SSP-TA.git
