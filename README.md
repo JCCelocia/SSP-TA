@@ -416,7 +416,6 @@ unified-security-toolkit/
    - VPN interfaces might not be detectable
 
 2. **Port Scanner:**
-   - TCP only (UDP scanning not implemented)
    - Sequential scanning (not parallel for reliability)
    - Firewall may block scans or give false negatives
 
@@ -522,42 +521,6 @@ cat ~/.security_toolkit/logs/*.log
 
 ---
 
-## Logging
-
-Application logs are stored in:
-- **Location:** `~/.security_toolkit/logs/`
-- **Format:** `security_toolkit_YYYYMMDD_HHMMSS.log`
-- **Contents:**
-  - Application startup and shutdown
-  - Dependency availability
-  - Security warnings (low iterations, sanitization)
-  - Error messages and exceptions
-  - User actions (scans started/stopped)
-
-**View logs:**
-```bash
-# Linux/macOS
-cat ~/.security_toolkit/logs/*.log
-
-# Windows
-type %USERPROFILE%\.security_toolkit\logs\*.log
-```
-
----
-
-## Future Enhancements
-
-- Unified results database with search and filtering
-- Report generation (PDF format)
-- Scheduled/automated scanning
-- Network intrusion detection rules
-- More sophisticated SQL injection detection
-- CSRF token generation and validation
-- Rate limiting for API protection
-- Integration with external vulnerability databases
-
----
-
 ## License & Disclaimer
 
 This project is for **educational purposes only**. The authors are not responsible for any misuse or damage caused by this software.
@@ -589,7 +552,7 @@ Users are responsible for complying with all applicable laws and regulations.
 
 **Course:** MO-IT142 - Security Script Programming  
 **Authors:** Maricon Caluya and Jannine Claire Celocia  
-**Unified Project:** Combining SSP MS1 and SSP MS2  
+**Unified Project:** Combining SSP MS1 and SSP MS2 making SSP Terminal Assessment
 **Year:** 2025
 
-**Repository:** [GitHub Link]
+**Repository:** [https://github.com/JCCelocia/SSP-TA.git]
