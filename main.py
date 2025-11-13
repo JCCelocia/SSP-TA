@@ -208,8 +208,8 @@ def main():
     optional_status = check_optional_dependencies()
     logger.info("Dependency status:")
     for dep, available in optional_status.items():
-        status = "✓" if available else "✗"
-        logger.info(f"  {status} {dep}")
+        status_console = "[OK]" if available else "[X]"
+        logger.info(f"  {status_console} {dep}")
     
     # Show warnings for missing optional dependencies
     show_dependency_warning(optional_status)

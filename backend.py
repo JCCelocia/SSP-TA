@@ -91,6 +91,7 @@ class SanitizationEngine:
         """
         Sanitize HTML/XSS using bleach or BeautifulSoup.
         Returns dict with sanitized text and modification info.
+        For web/storage contexts (HTML-safe with entities).
         """
         if not text:
             return {'sanitized': '', 'was_modified': False, 'removed_elements': []}
@@ -140,11 +141,78 @@ class SanitizationEngine:
             if sanitized != original:
                 removed_elements.append("HTML tags (basic)")
         
-        # Final HTML escape
+        # Final HTML escape for web safety
         sanitized = html.escape(sanitized)
         
         return {
             'sanitized': sanitized.strip(),
+            'was_modified': original != sanitized,
+            'removed_elements': list(set(removed_elements))
+        }
+    
+    @classmethod
+    def sanitize_text(cls, text: str) -> Dict[str, Any]:
+        """
+        Sanitize for plain-text GUI display (readable, no HTML entities).
+        Returns dict with sanitized text and modification info.
+        For GUI display contexts only - NOT for web/storage.
+        """
+        if not text:
+            return {'sanitized': '', 'was_modified': False, 'removed_elements': []}
+        
+        original = text
+        removed_elements = []
+        
+        # Use bleach if available (preferred)
+        if BLEACH_AVAILABLE:
+            sanitized = bleach.clean(
+                text,
+                tags=[],
+                attributes={},
+                strip=True,
+                strip_comments=True
+            )
+            if sanitized != original:
+                removed_elements.append("HTML/Script tags")
+        
+        # Fallback to BeautifulSoup
+        elif BS4_AVAILABLE:
+            soup = BeautifulSoup(text, 'html.parser')
+            
+            # Remove all script tags
+            for script in soup.find_all('script'):
+                removed_elements.append('script tag')
+                script.decompose()
+            
+            # Remove dangerous attributes
+            dangerous_attrs = ['onclick', 'onload', 'onerror', 'onmouseover', 'onchange']
+            for tag in soup.find_all():
+                for attr in dangerous_attrs:
+                    if tag.has_attr(attr):
+                        removed_elements.append(f'{attr} attribute')
+                        del tag[attr]
+            
+            # Get plain text
+            sanitized = soup.get_text(separator=" ")
+        
+        # Basic fallback
+        else:
+            sanitized = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.IGNORECASE | re.DOTALL)
+            sanitized = re.sub(r'<[^>]+>', '', sanitized)
+            if sanitized != original:
+                removed_elements.append("HTML tags")
+        
+        # Remove control characters
+        sanitized = re.sub(r"[\x00-\x08\x0B-\x0C\x0E-\x1F]", "", sanitized)
+        
+        # Collapse whitespace
+        sanitized = re.sub(r"\s+", " ", sanitized).strip()
+        
+        # Unescape HTML entities for readable display
+        sanitized = html.unescape(sanitized)
+        
+        return {
+            'sanitized': sanitized,
             'was_modified': original != sanitized,
             'removed_elements': list(set(removed_elements))
         }
@@ -182,10 +250,17 @@ class SanitizationEngine:
         }
     
     @classmethod
-    def sanitize_input(cls, text: str, max_length: Optional[int] = None) -> Dict[str, Any]:
+    def sanitize_input(cls, text: str, max_length: Optional[int] = None, 
+                      for_display: bool = False) -> Dict[str, Any]:
         """
         Comprehensive input sanitization.
         Combines HTML sanitization, SQL check, and length validation.
+        
+        Args:
+            text: Input text to sanitize
+            max_length: Maximum allowed length (default 8KB)
+            for_display: If True, returns readable plain text for GUI display.
+                        If False, returns HTML-safe text for web/storage.
         """
         if not text:
             return {
@@ -212,14 +287,20 @@ class SanitizationEngine:
                 'errors': errors
             }
         
-        # HTML sanitization
-        html_result = cls.sanitize_html(text)
+        # Choose sanitization method based on context
+        if for_display:
+            # Plain text for GUI display (readable)
+            html_result = cls.sanitize_text(text)
+        else:
+            # HTML-safe for web/storage (entities escaped)
+            html_result = cls.sanitize_html(text)
+        
         if html_result['was_modified']:
             warnings.append(
                 f"Potentially malicious content removed: {', '.join(html_result['removed_elements'])}"
             )
         
-        # SQL injection check
+        # SQL injection check (on the sanitized text)
         sql_result = cls.check_sql_injection(html_result['sanitized'])
         if sql_result['potentially_malicious']:
             warnings.append("Potential SQL injection patterns detected and sanitized")
@@ -554,6 +635,95 @@ class PasswordHasher:
 
 
 # ============================================================================
+# PASSWORD GENERATION + HASHING COMBINED (Enhancement)
+# ============================================================================
+
+def generate_and_hash_passwords(count: int = 5, 
+                                length: int = 12,
+                                method: str = 'pbkdf2',
+                                iterations: Optional[int] = None,
+                                include_uppercase: bool = True,
+                                include_lowercase: bool = True,
+                                include_digits: bool = True,
+                                include_special: bool = True,
+                                exclude_ambiguous: bool = False) -> Dict[str, Any]:
+    """
+    Generate multiple random passwords and hash each one using the specified KDF.
+    
+    Args:
+        count: Number of passwords to generate (1-50)
+        length: Length of each password
+        method: KDF method ('pbkdf2', 'argon2', 'bcrypt')
+        iterations: PBKDF2 iterations (default 310,000)
+        include_uppercase: Include uppercase letters
+        include_lowercase: Include lowercase letters
+        include_digits: Include digits
+        include_special: Include special characters
+        exclude_ambiguous: Exclude ambiguous characters
+    
+    Returns:
+        Dict with:
+            - method: KDF method used
+            - iterations: Iterations (for PBKDF2)
+            - results: List of dicts with password, salt, KDF, iterations, hash
+    """
+    if count < 1 or count > 50:
+        raise ValueError("Password count must be between 1 and 50")
+    
+    if iterations is None:
+        iterations = PasswordHasher.NIST_RECOMMENDED_ITERATIONS
+    
+    # Generate passwords
+    generator = PasswordGenerator()
+    passwords = []
+    for _ in range(count):
+        pwd = generator.generate_password(
+            length=length,
+            include_uppercase=include_uppercase,
+            include_lowercase=include_lowercase,
+            include_digits=include_digits,
+            include_special=include_special,
+            exclude_ambiguous=exclude_ambiguous
+        )
+        passwords.append(pwd)
+    
+    # Hash each password separately with unique salt
+    hasher = PasswordHasher()
+    results = []
+    
+    for password in passwords:
+        if method == 'pbkdf2':
+            # Generate unique salt for each password
+            salt = os.urandom(PasswordHasher.SALT_LENGTH)
+            result = hasher._hash_pbkdf2(password, iterations, salt)
+            result['password'] = password  # Add original password to result
+        elif method == 'argon2':
+            result = hasher._hash_argon2(password)
+            result['password'] = password
+        elif method == 'bcrypt':
+            result = hasher._hash_bcrypt(password)
+            result['password'] = password
+        else:
+            raise ValueError(f"Unknown KDF method: {method}")
+        
+        results.append(result)
+    
+    # Log warning if iterations below threshold (for PBKDF2)
+    if method == 'pbkdf2' and iterations < PasswordHasher.NIST_RECOMMENDED_ITERATIONS:
+        logger.warning(
+            f"PBKDF2 iterations ({iterations}) below NIST 2023 recommended "
+            f"({PasswordHasher.NIST_RECOMMENDED_ITERATIONS})"
+        )
+    
+    return {
+        'method': method,
+        'iterations': iterations if method == 'pbkdf2' else None,
+        'count': len(results),
+        'results': results
+    }
+
+
+# ============================================================================
 # FORM VALIDATION (MS1 Feature with Sanitization)
 # ============================================================================
 
@@ -592,16 +762,16 @@ class FormValidator:
             return False, "Age must be a valid number"
     
     def validate_form(self, name: str, email: str, age: str, message: str) -> Dict[str, Any]:
-        """Comprehensive form validation with sanitization"""
+        """Comprehensive form validation with sanitization for GUI display"""
         errors = []
         warnings = []
         sanitized_data = {}
         
-        # Validate and sanitize name
+        # Validate and sanitize name (for display)
         if not name.strip():
             errors.append("Name is required")
         else:
-            name_result = self.sanitizer.sanitize_input(name)
+            name_result = self.sanitizer.sanitize_input(name, for_display=True)
             if not name_result['valid']:
                 errors.extend(name_result['errors'])
             else:
@@ -622,9 +792,9 @@ class FormValidator:
         else:
             sanitized_data['age'] = int(age.strip()) if age.strip() else None
         
-        # Sanitize message
+        # Sanitize message (for display)
         if message.strip():
-            message_result = self.sanitizer.sanitize_input(message)
+            message_result = self.sanitizer.sanitize_input(message, for_display=True)
             if not message_result['valid']:
                 errors.extend(message_result['errors'])
             else:
