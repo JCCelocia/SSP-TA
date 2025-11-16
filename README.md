@@ -2,10 +2,6 @@
 
 A comprehensive GUI application combining local and web security analysis tools, built with Python and CustomTkinter.
 
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
-![License](https://img.shields.io/badge/license-Educational-green)
-![Status](https://img.shields.io/badge/status-active-success)
-
 ---
 
 ## 📚 Academic Project
