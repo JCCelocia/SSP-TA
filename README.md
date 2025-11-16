@@ -655,7 +655,7 @@ This software is provided "as is" without warranty of any kind. The authors are 
 ### Course Information
 - **Course:** MO-IT142 - Security Script Programming
 - **Assessment:** Terminal Assessment
-- **Institution:** [Your Institution Name]
+- **Institution:** Mapúa Malayan Digital College 
 - **Year:** 2025
 
 ### Technologies Used
@@ -671,17 +671,6 @@ This software is provided "as is" without warranty of any kind. The authors are 
 - NIST SP 800-132 for PBKDF2 iteration recommendations
 - OWASP guidelines for input validation and sanitization
 - Python PEP 8 style guide
-
----
-
-## 📞 Contact & Support
-
-**Repository:** https://github.com/JCCelocia/SSP-TA  
-**Related Projects:**
-- MS1: https://github.com/JCCelocia/SSP-MS1
-- MS2: https://github.com/JCCelocia/SSP-MS2
-
-**For academic inquiries:** Contact through course channels
 
 ---
 
@@ -706,7 +695,5 @@ This software is provided "as is" without warranty of any kind. The authors are 
 - System monitoring capabilities
 
 ---
-
-**Made with 🔒 for MO-IT142 Security Script Programming**
 
 *Last Updated: 2025*
