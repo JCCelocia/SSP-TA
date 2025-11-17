@@ -50,7 +50,7 @@ except ImportError:
     BCRYPT_AVAILABLE = False
     logger.info("bcrypt not available - bcrypt hashing disabled")
 
-# Network libraries (from MS2)
+# Network libraries
 try:
     import psutil
     PSUTIL_AVAILABLE = True
@@ -58,7 +58,7 @@ except ImportError:
     PSUTIL_AVAILABLE = False
 
 try:
-    from scapy.all import sniff, IP, TCP, UDP, ICMP, IPv6, ICMPv6EchoRequest, ICMPv6EchoReply, get_if_list
+    from scapy.all import sniff, IP, TCP, UDP, ICMP, IPv6, ICMPv6EchoRequest, ICMPv6EchoReply, ICMPv6ND_NS, ICMPv6ND_NA, get_if_list
     SCAPY_AVAILABLE = True
 except ImportError:
     SCAPY_AVAILABLE = False
@@ -830,7 +830,7 @@ class FormValidator:
                 errors.append("Name must not exceed 100 characters")
             elif any(ch.isdigit() for ch in raw_name):
                 errors.append("Name cannot contain numbers")
-            elif not re.match(r"^[A-Za-z\s\-\.''’]+$", raw_name):
+            elif not re.match(r"^[A-Za-z\s\-\.''']+$", raw_name):
                 errors.append("Name contains invalid characters")
             else:
                 name_result = self.sanitizer.sanitize_input(raw_name, for_display=True)
@@ -1296,6 +1296,104 @@ class PortScannerBackend:
     def is_scanning(self) -> bool:
         """Check if scanning"""
         return self.scanning
+
+
+# ============================================================================
+# NETWORK PERFORMANCE MONITORING (NEW FEATURE)
+# ============================================================================
+
+class NetworkPerformanceBackend:
+    """Backend for network performance monitoring"""
+    
+    def __init__(self):
+        self.prev_bytes_sent = 0
+        self.prev_bytes_recv = 0
+        self.prev_timestamp = 0.0
+    
+    def reset_counters(self):
+        """Initialize or reset the previous counters"""
+        if not PSUTIL_AVAILABLE:
+            return
+        
+        try:
+            counters = psutil.net_io_counters()
+            self.prev_bytes_sent = counters.bytes_sent
+            self.prev_bytes_recv = counters.bytes_recv
+            self.prev_timestamp = time.time()
+        except Exception:
+            self.prev_bytes_sent = 0
+            self.prev_bytes_recv = 0
+            self.prev_timestamp = time.time()
+    
+    def get_stats(self) -> dict:
+        """
+        Get current network performance statistics
+        Returns: dict with upload_mbps, download_mbps, bytes_sent, bytes_recv, connections, error
+        """
+        if not PSUTIL_AVAILABLE:
+            return {
+                "upload_mbps": None,
+                "download_mbps": None,
+                "bytes_sent": None,
+                "bytes_recv": None,
+                "connections": None,
+                "error": "psutil is not available"
+            }
+        
+        try:
+            # Get current counters
+            current = psutil.net_io_counters()
+            current_time = time.time()
+            
+            # Calculate deltas
+            delta_bytes_sent = current.bytes_sent - self.prev_bytes_sent
+            delta_bytes_recv = current.bytes_recv - self.prev_bytes_recv
+            delta_time = current_time - self.prev_timestamp
+            
+            # Avoid division by zero
+            if delta_time < 0.001:
+                upload_mbps = 0.0
+                download_mbps = 0.0
+            else:
+                # Convert to MB/s
+                upload_mbps = (delta_bytes_sent / delta_time) / (1024 * 1024)
+                download_mbps = (delta_bytes_recv / delta_time) / (1024 * 1024)
+            
+            # Get total bytes
+            bytes_sent = current.bytes_sent
+            bytes_recv = current.bytes_recv
+            
+            # Get connection count
+            connections = None
+            try:
+                connections = len(psutil.net_connections())
+            except Exception:
+                # If net_connections() fails (permissions), leave as None
+                pass
+            
+            # Update stored values
+            self.prev_bytes_sent = current.bytes_sent
+            self.prev_bytes_recv = current.bytes_recv
+            self.prev_timestamp = current_time
+            
+            return {
+                "upload_mbps": upload_mbps,
+                "download_mbps": download_mbps,
+                "bytes_sent": bytes_sent,
+                "bytes_recv": bytes_recv,
+                "connections": connections,
+                "error": None
+            }
+        
+        except Exception as e:
+            return {
+                "upload_mbps": None,
+                "download_mbps": None,
+                "bytes_sent": None,
+                "bytes_recv": None,
+                "connections": None,
+                "error": str(e)
+            }
 
 
 # ============================================================================

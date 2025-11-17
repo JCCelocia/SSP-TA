@@ -1,14 +1,14 @@
 """
 Unified Security Toolkit
-Combines local security (network analysis, port scanning) with web security 
-(password analysis, generation, hashing, form validation).
+Combines local security (network analysis, port scanning, performance monitoring) 
+with web security (password analysis, generation, hashing, form validation).
 
 Requirements:
 - customtkinter: GUI framework
 - scapy: Network packet capture (for network traffic analysis)
+- psutil: System and network statistics (for network performance monitoring)
 - bleach or beautifulsoup4: Input sanitization
 - Optional: argon2-cffi, bcrypt (for additional KDF methods)
-- Optional: psutil (for better interface detection)
 
 Usage:
     python main.py
@@ -63,6 +63,13 @@ def check_optional_dependencies():
     except ImportError:
         status['scapy'] = False
     
+    # Network performance monitoring
+    try:
+        import psutil
+        status['psutil'] = True
+    except ImportError:
+        status['psutil'] = False
+    
     # Sanitization
     try:
         import bleach
@@ -89,13 +96,6 @@ def check_optional_dependencies():
     except ImportError:
         status['bcrypt'] = False
     
-    # Utilities
-    try:
-        import psutil
-        status['psutil'] = True
-    except ImportError:
-        status['psutil'] = False
-    
     return status
 
 
@@ -112,14 +112,14 @@ def show_dependency_warning(optional_status):
         missing_critical.append("bleach or beautifulsoup4 (for input sanitization)")
     
     # Optional enhancements
+    if not optional_status.get('psutil', False):
+        missing_optional.append("psutil (for Network Performance Monitor)")
+    
     if not optional_status.get('argon2-cffi', False):
         missing_optional.append("argon2-cffi (for Argon2 password hashing)")
     
     if not optional_status.get('bcrypt', False):
         missing_optional.append("bcrypt (for bcrypt password hashing)")
-    
-    if not optional_status.get('psutil', False):
-        missing_optional.append("psutil (for better network interface detection)")
     
     if missing_critical or missing_optional:
         msg_parts = []
@@ -135,7 +135,7 @@ def show_dependency_warning(optional_status):
             msg_parts.append("")
         
         msg_parts.append("Install with:")
-        msg_parts.append("  pip install scapy bleach argon2-cffi bcrypt psutil")
+        msg_parts.append("  pip install scapy bleach psutil argon2-cffi bcrypt")
         
         message = "\n".join(msg_parts)
         
@@ -228,9 +228,9 @@ def main():
             # Stop any running operations
             try:
                 # Stop port scanner if running
-                port_scanner_frame = app.frames.get("Local Security")
-                if port_scanner_frame and hasattr(port_scanner_frame, 'scanner_frame'):
-                    scanner = port_scanner_frame.scanner_frame
+                local_security_frame = app.frames.get("Local Security")
+                if local_security_frame and hasattr(local_security_frame, 'scanner_frame'):
+                    scanner = local_security_frame.scanner_frame
                     if scanner.backend.is_scanning():
                         if messagebox.askyesno("Scan in Progress", 
                                               "A port scan is running. Stop and exit?"):
@@ -239,14 +239,20 @@ def main():
                             return
                 
                 # Stop network capture if running
-                if port_scanner_frame and hasattr(port_scanner_frame, 'traffic_frame'):
-                    traffic = port_scanner_frame.traffic_frame
+                if local_security_frame and hasattr(local_security_frame, 'traffic_frame'):
+                    traffic = local_security_frame.traffic_frame
                     if traffic.backend.is_capturing:
                         if messagebox.askyesno("Capture in Progress", 
                                               "Network capture is running. Stop and exit?"):
                             traffic.backend.stop_capture()
                         else:
                             return
+                
+                # Stop network performance monitoring if running
+                if local_security_frame and hasattr(local_security_frame, 'performance_frame'):
+                    perf = local_security_frame.performance_frame
+                    perf.updating = False
+                
             except Exception as e:
                 logger.warning(f"Error during cleanup: {e}")
             
@@ -260,6 +266,7 @@ def main():
         print("Unified Security Toolkit - Ready")
         print("=" * 60)
         print("Note: Network capture requires administrator/root privileges")
+        print("Note: Network performance monitor requires psutil library")
         print("=" * 60 + "\n")
         
         app.mainloop()

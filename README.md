@@ -54,7 +54,7 @@ All features are unified in a modern dark-themed GUI with professional styling a
 
 > **⚠️ Only use on systems you own or have permission to test**
 
-#### Network Performance Monitor
+#### Network Performance Monitor (NEW)
 - Real-time network performance statistics
 - **Upload Speed:** Live upload speed monitoring (MB/s)
 - **Download Speed:** Live download speed monitoring (MB/s)
@@ -415,13 +415,13 @@ unified-security-toolkit/
 │   ├── FormValidator
 │   ├── NetworkTrafficBackend
 │   ├── PortScannerBackend
-│   └── NetworkPerformanceBackend
+│   └── NetworkPerformanceBackend (NEW)
 ├── frontend.py          # GUI components (CustomTkinter)
 │   ├── DashboardFrame
 │   ├── LocalSecurityFrame
 │   │   ├── NetworkTrafficFrame
 │   │   ├── PortScannerFrame
-│   │   └── NetworkPerformanceFrame
+│   │   └── NetworkPerformanceFrame (NEW)
 │   └── WebSecurityFrame
 │       ├── PasswordStrengthTab
 │       ├── PasswordGeneratorTab
@@ -775,7 +775,7 @@ This software is provided "as is" without warranty of any kind. The authors are 
 ### Features from MS2
 - Network traffic analyzer
 - Port scanner
-- Network performance monitor
+- Network performance monitor (NEW)
 - System monitoring capabilities
 
 ---
