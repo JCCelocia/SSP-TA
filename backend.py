@@ -692,6 +692,7 @@ def generate_and_hash_passwords(count: int = 5,
     results = []
     
     for password in passwords:
+        created_at = datetime.now().isoformat(timespec="seconds")
         if method == 'pbkdf2':
             # Generate unique salt for each password
             salt = os.urandom(PasswordHasher.SALT_LENGTH)
@@ -705,6 +706,8 @@ def generate_and_hash_passwords(count: int = 5,
             result['password'] = password
         else:
             raise ValueError(f"Unknown KDF method: {method}")
+        
+        result['created_at'] = created_at
         
         results.append(result)
     
@@ -724,74 +727,145 @@ def generate_and_hash_passwords(count: int = 5,
 
 
 # ============================================================================
-# FORM VALIDATION (MS1 Feature with Sanitization)
+# FORM VALIDATION (MS1 Feature)
 # ============================================================================
 
 class FormValidator:
-    """Form validation with integrated sanitization"""
-    
+    """Form validation with integrated sanitization and username support.
+
+    This version is aligned with SSP MS1's validation rules while keeping the
+    original TA sanitization pipeline (SanitizationEngine) and the full name
+    field alongside the username.
+    """
+
     EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    USERNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_-]{3,20}$')
+
     AGE_LIMITS = {'min': 18, 'max': 120}
-    
+    USERNAME_LIMITS = {'min': 3, 'max': 20}
+
     def __init__(self):
         self.sanitizer = SanitizationEngine()
-    
+
+    def validate_username(self, username: str) -> Tuple[bool, str]:
+        """Validate username format (mirrors SSP MS1 rules)."""
+        if not username:
+            return False, "Username is required"
+
+        username = username.strip()
+
+        # Check length
+        if len(username) < self.USERNAME_LIMITS['min']:
+            return False, f"Username must be at least {self.USERNAME_LIMITS['min']} characters"
+
+        if len(username) > self.USERNAME_LIMITS['max']:
+            return False, f"Username must not exceed {self.USERNAME_LIMITS['max']} characters"
+
+        # Check for spaces
+        if ' ' in username:
+            return False, "Username cannot contain spaces"
+
+        # Check if starts with number only
+        if username and username[0].isdigit() and username.isdigit():
+            return False, "Username cannot be only numbers"
+
+        # Check allowed characters
+        if not self.USERNAME_PATTERN.match(username):
+            return False, "Username can only contain letters, numbers, underscores, and hyphens"
+
+        # Check for consecutive special characters
+        if '--' in username or '__' in username or '-_' in username or '_-' in username:
+            return False, "Username cannot have consecutive special characters"
+
+        return True, ""
+
     def validate_email(self, email: str) -> Tuple[bool, str]:
-        """Validate email format"""
+        """Validate email format (aligned with SSP MS1)."""
         if not email:
             return False, "Email is required"
-        
+
         if not self.EMAIL_PATTERN.match(email):
             return False, "Invalid email format"
-        
+
         return True, ""
-    
+
     def validate_age(self, age_str: str) -> Tuple[bool, str]:
-        """Validate age input"""
+        """Validate age input (aligned with SSP MS1)."""
         if not age_str.strip():
+            # Age is optional but, if provided, must be valid
             return True, ""
-        
+
         try:
             age = int(age_str)
             if age < self.AGE_LIMITS['min']:
-                return False, f"Minimum age: {self.AGE_LIMITS['min']}"
+                return False, f"You must be at least {self.AGE_LIMITS['min']} years old"
             elif age > self.AGE_LIMITS['max']:
-                return False, f"Maximum age: {self.AGE_LIMITS['max']}"
+                return False, f"Please enter a realistic age (maximum {self.AGE_LIMITS['max']} years)"
             return True, ""
         except ValueError:
             return False, "Age must be a valid number"
-    
-    def validate_form(self, name: str, email: str, age: str, message: str) -> Dict[str, Any]:
-        """Comprehensive form validation with sanitization for GUI display"""
-        errors = []
-        warnings = []
-        sanitized_data = {}
-        
-        # Validate and sanitize name (for display)
-        if not name.strip():
+
+    def validate_form(self, name: str, username: str, email: str, age: str, message: str) -> Dict[str, Any]:
+        """Comprehensive form validation with sanitization for GUI display.
+
+        Fields:
+            - name: Full name (kept from TA, with simple validation rules)
+            - username: New field, validated using SSP MS1 rules
+            - email, age, message: Validated similarly to SSP MS1
+        """
+        errors: List[str] = []
+        warnings: List[str] = []
+        sanitized_data: Dict[str, Any] = {}
+
+        # Validate and sanitize full name
+        if not name or not name.strip():
             errors.append("Name is required")
         else:
-            name_result = self.sanitizer.sanitize_input(name, for_display=True)
-            if not name_result['valid']:
-                errors.extend(name_result['errors'])
+            raw_name = name.strip()
+
+            # Simple validations for full name
+            if len(raw_name) < 2:
+                errors.append("Name must be at least 2 characters long")
+            elif len(raw_name) > 100:
+                errors.append("Name must not exceed 100 characters")
+            elif any(ch.isdigit() for ch in raw_name):
+                errors.append("Name cannot contain numbers")
+            elif not re.match(r"^[A-Za-z\s\-\.''’]+$", raw_name):
+                errors.append("Name contains invalid characters")
             else:
-                sanitized_data['name'] = name_result['sanitized']
-                warnings.extend(name_result['warnings'])
-        
+                name_result = self.sanitizer.sanitize_input(raw_name, for_display=True)
+                if not name_result['valid']:
+                    errors.extend(name_result['errors'])
+                else:
+                    sanitized_data['name'] = name_result['sanitized']
+                    warnings.extend(name_result['warnings'])
+
+        # Validate username (mirrors SSP MS1)
+        username_valid, username_error = self.validate_username(username or "")
+        if not username_valid:
+            errors.append(username_error)
+        else:
+            username_result = self.sanitizer.sanitize_input(username, for_display=True)
+            if not username_result['valid']:
+                errors.extend(username_result['errors'])
+            else:
+                sanitized_data['username'] = username_result['sanitized']
+                warnings.extend(username_result['warnings'])
+
         # Validate email
         email_valid, email_error = self.validate_email(email)
         if not email_valid:
             errors.append(email_error)
         else:
             sanitized_data['email'] = email.strip()
-        
+
         # Validate age
         age_valid, age_error = self.validate_age(age)
         if not age_valid:
             errors.append(age_error)
         else:
             sanitized_data['age'] = int(age.strip()) if age.strip() else None
-        
+
         # Sanitize message (for display)
         if message.strip():
             message_result = self.sanitizer.sanitize_input(message, for_display=True)
@@ -802,7 +876,7 @@ class FormValidator:
                 warnings.extend(message_result['warnings'])
         else:
             sanitized_data['message'] = None
-        
+
         return {
             'is_valid': len(errors) == 0,
             'errors': errors,
@@ -920,10 +994,26 @@ class NetworkTrafficBackend:
                 'store': False,
                 'stop_filter': lambda x: not self.is_capturing
             }
-            
+
+            bpf_filters = []
+
+            # If the user typed a port, restrict capture to that single port
+            port_str = (self.port_filter or "").strip()
+            if port_str:
+                try:
+                    port_num = int(port_str)
+                    if 1 <= port_num <= 65535:
+                        bpf_filters.append(f"port {port_num}")
+                except ValueError:
+                    # Ignore invalid port value; fall back to no port filter
+                    pass
+
+            if bpf_filters:
+                kwargs['filter'] = " and ".join(bpf_filters)
+
             if self.selected_interface:
                 kwargs['iface'] = self.selected_interface
-            
+
             sniff(**kwargs)
         except PermissionError:
             if self.on_capture_error:

@@ -1170,9 +1170,11 @@ class FormValidatorTab(ctk.CTkFrame):
         
         for label_text, attr_name, placeholder in [
             ("Name *", "name_entry", "Full name"),
-            ("Email *", "email_entry", "user@example.com"),
-            ("Age", "age_entry", "25")
+            ("Username *", "username_entry", ""),
+            ("Email *", "email_entry", ""),
+            ("Age", "age_entry", "")
         ]:
+
             ctk.CTkLabel(left_frame, text=label_text, font=self.fonts['body']).pack(
                 anchor="w", padx=15, pady=(10, 2)
             )
@@ -1199,8 +1201,6 @@ class FormValidatorTab(ctk.CTkFrame):
         
         ctk.CTkButton(btn_frame, text="Validate Form", command=self.validate_form,
                      height=40, width=130, font=self.fonts['body']).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="Load XSS Test", command=self.load_xss_test,
-                     height=35, width=130, fg_color="#FF5722", font=self.fonts['body']).pack(side="left", padx=5)
         ctk.CTkButton(btn_frame, text="Clear", command=self.clear_form,
                      height=35, width=90, font=self.fonts['body']).pack(side="left", padx=5)
         
@@ -1221,10 +1221,12 @@ class FormValidatorTab(ctk.CTkFrame):
     def validate_form(self):
         form_data = {
             'name': self.name_entry.get(),
+            'username': self.username_entry.get(),
             'email': self.email_entry.get(),
             'age': self.age_entry.get(),
             'message': self.message_text.get("1.0", "end-1c")
         }
+
         
         # Check length limit
         message_len = len(form_data['message'])
@@ -1261,66 +1263,15 @@ class FormValidatorTab(ctk.CTkFrame):
         if result['is_valid']:
             self.result_card.add_data_grid(result['data'])
     
-    def load_xss_test(self):
-        self.clear_form()
-        self.name_entry.insert(0, "John <script>alert('XSS')</script> Doe")
-        self.email_entry.insert(0, "test@example.com")
-        self.age_entry.insert(0, "25")
-        self.message_text.insert("1.0", 
-            "Test <script>alert('XSS')</script> and <img src=x onerror=alert('XSS')>")
-        self.update_char_count()
-    
     def clear_form(self):
         self.name_entry.delete(0, "end")
+        self.username_entry.delete(0, "end")
         self.email_entry.delete(0, "end")
         self.age_entry.delete(0, "end")
         self.message_text.delete("1.0", "end")
         self.result_card.clear_content()
         self.result_card.set_status('info', 'Ready')
         self.update_char_count()
-
-
-# ============================================================================
-# RESULTS & EXPORT
-# ============================================================================
-
-class ResultsExportFrame(ctk.CTkFrame):
-    """Results and Export"""
-    
-    def __init__(self, parent, app, fonts):
-        super().__init__(parent, corner_radius=15)
-        self.app = app
-        self.fonts = fonts
-        self.setup_ui()
-    
-    def setup_ui(self):
-        title = ctk.CTkLabel(self, text="Results & Export", font=self.fonts['h1'])
-        title.pack(pady=30)
-        
-        info = ctk.CTkLabel(self, 
-                          text="Export functionality for scan results and reports",
-                          font=self.fonts['body'], text_color=("gray60", "gray40"))
-        info.pack(pady=10)
-        
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(pady=30)
-        
-        ctk.CTkButton(btn_frame, text="Export to CSV", command=self.export_csv,
-                     width=150, height=40, font=self.fonts['body']).pack(pady=10)
-        ctk.CTkButton(btn_frame, text="Export to JSON", command=self.export_json,
-                     width=150, height=40, font=self.fonts['body']).pack(pady=10)
-    
-    def export_csv(self):
-        filename = filedialog.asksaveasfilename(defaultextension=".csv", 
-                                               filetypes=[("CSV files", "*.csv")])
-        if filename:
-            messagebox.showinfo("Export", f"Results exported to {filename}")
-    
-    def export_json(self):
-        filename = filedialog.asksaveasfilename(defaultextension=".json", 
-                                               filetypes=[("JSON files", "*.json")])
-        if filename:
-            messagebox.showinfo("Export", f"Results exported to {filename}")
 
 
 # ============================================================================
@@ -1370,8 +1321,7 @@ class MainApplication(ctk.CTk):
         tools = [
             "Dashboard",
             "Local Security",
-            "Web Security",
-            "Results & Export"
+            "Web Security"
         ]
         
         for i, tool in enumerate(tools, 1):
@@ -1395,7 +1345,6 @@ class MainApplication(ctk.CTk):
         self.frames["Dashboard"] = DashboardFrame(self.content_frame, self, self.fonts)
         self.frames["Local Security"] = LocalSecurityFrame(self.content_frame, self.fonts)
         self.frames["Web Security"] = WebSecurityFrame(self.content_frame, self.fonts)
-        self.frames["Results & Export"] = ResultsExportFrame(self.content_frame, self, self.fonts)
         
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
