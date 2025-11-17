@@ -22,7 +22,7 @@ A comprehensive GUI application combining local and web security analysis tools,
 
 This toolkit integrates two comprehensive security toolsets:
 
-- **Local Security (MS2)**: Network traffic analysis and port scanning
+- **Local Security (MS2)**: Network traffic analysis, port scanning, and network performance monitoring
 - **Web Security (MS1)**: Password security, form validation, and input sanitization
 
 All features are unified in a modern dark-themed GUI with professional styling and enhanced usability.
@@ -53,6 +53,19 @@ All features are unified in a modern dark-themed GUI with professional styling a
 - Color-coded results (green for open ports)
 
 > **⚠️ Only use on systems you own or have permission to test**
+
+#### Network Performance Monitor
+- Real-time network performance statistics
+- **Upload Speed:** Live upload speed monitoring (MB/s)
+- **Download Speed:** Live download speed monitoring (MB/s)
+- **Total Data Transfer:**
+  - Cumulative bytes sent
+  - Cumulative bytes received
+- **Active Connections:** Count of active network connections
+- Auto-refresh every second
+- Clean visual indicators with color-coded speeds
+
+> **ℹ️ Requires psutil library for functionality**
 
 ### 🌐 Web Security Tools
 
@@ -142,7 +155,7 @@ customtkinter>=5.0.0     # Modern GUI framework
 #### Local Security Features
 ```bash
 scapy>=2.4.5            # Network packet capture and analysis
-psutil>=5.8.0           # Enhanced network interface detection (optional)
+psutil>=5.8.0           # Network performance monitoring & interface detection
 ```
 
 #### Web Security Features
@@ -168,6 +181,11 @@ cd SSP-TA
 
 ### 2. Install Dependencies
 
+**Quick Install (All Features):**
+```bash
+pip install -r requirements.txt
+```
+
 **Minimum Installation (Core GUI only):**
 ```bash
 pip install customtkinter
@@ -183,9 +201,9 @@ pip install customtkinter scapy psutil
 pip install customtkinter bleach beautifulsoup4
 ```
 
-**Complete Installation (All Features):**
+**Complete Installation (Manual):**
 ```bash
-pip install customtkinter scapy bleach beautifulsoup4 argon2-cffi bcrypt psutil
+pip install customtkinter scapy psutil bleach beautifulsoup4 argon2-cffi bcrypt
 ```
 
 ### 3. Run the Application
@@ -216,7 +234,7 @@ python main.py
 
 ### Dashboard
 The main dashboard provides quick access to all security tools:
-- **Local Security**: Access network analyzer and port scanner
+- **Local Security**: Access network analyzer, port scanner, and performance monitor
 - **Web Security**: Access password tools and form validator
 
 ### Local Security Tools
@@ -267,6 +285,33 @@ The main dashboard provides quick access to all security tools:
 4. **Stop or Clear:**
    - Click **"Stop"** to cancel running scan
    - Click **"Clear"** to reset results
+
+#### Network Performance Monitor
+
+1. **Access Monitor:**
+   - Navigate to Local Security
+   - Click **"Network Performance"** in the segmented button
+
+2. **View Real-Time Statistics:**
+   - **Network Speed:**
+     - ⬆️ Upload Speed: Current upload rate in MB/s
+     - ⬇️ Download Speed: Current download rate in MB/s
+   
+   - **Total Data Transfer:**
+     - 📤 Bytes Sent: Cumulative data transmitted
+     - 📥 Bytes Received: Cumulative data received
+   
+   - **Network Connections:**
+     - 🔗 Active Connections: Count of active network connections
+
+3. **Auto-Refresh:**
+   - Statistics update automatically every second
+   - No manual refresh needed
+
+4. **Requirements:**
+   - Requires `psutil` library to be installed
+   - Shows "N/A" if psutil is not available
+   - May require elevated privileges for connection count on some systems
 
 ### Web Security Tools
 
@@ -369,16 +414,19 @@ unified-security-toolkit/
 │   ├── PasswordHasher
 │   ├── FormValidator
 │   ├── NetworkTrafficBackend
-│   └── PortScannerBackend
+│   ├── PortScannerBackend
+│   └── NetworkPerformanceBackend
 ├── frontend.py          # GUI components (CustomTkinter)
 │   ├── DashboardFrame
 │   ├── LocalSecurityFrame
 │   │   ├── NetworkTrafficFrame
-│   │   └── PortScannerFrame
+│   │   ├── PortScannerFrame
+│   │   └── NetworkPerformanceFrame
 │   └── WebSecurityFrame
 │       ├── PasswordStrengthTab
 │       ├── PasswordGeneratorTab
 │       └── FormValidatorTab
+├── requirements.txt     # Python dependencies
 └── README.md           # This file
 ```
 
@@ -428,6 +476,15 @@ unified-security-toolkit/
 - **Sequential:** One port at a time for reliability
 - **Timeout control:** Configurable timeout per port
 
+#### Network Performance Monitoring
+- **psutil:** Cross-platform system and network utilities
+- **Real-time metrics:**
+  - Network I/O counters (bytes sent/received)
+  - Upload/download speed calculation (MB/s)
+  - Active connection counting
+- **Auto-refresh:** Updates every 1 second
+- **Error handling:** Graceful degradation if psutil unavailable
+
 ---
 
 ## ⚠️ Important Notes
@@ -450,6 +507,7 @@ unified-security-toolkit/
 
 **Administrator/Root Privileges:**
 - Required for network traffic capture on all platforms
+- May be required for network connection counting on some systems
 - Port scanning works without elevated privileges
 - Web security features work without elevated privileges
 
@@ -470,12 +528,18 @@ unified-security-toolkit/
    - No UDP scanning support
    - Firewall may affect results
 
-3. **Sanitization:**
+3. **Network Performance Monitor:**
+   - Requires psutil library
+   - Connection count may require elevated privileges
+   - Counters reset on application restart
+   - Accuracy depends on system load
+
+4. **Sanitization:**
    - Requires at least one library (bleach or beautifulsoup4)
    - Cannot prevent all sophisticated attacks
    - 8KB limit may be restrictive for some use cases
 
-4. **KDF Methods:**
+5. **KDF Methods:**
    - Argon2 and bcrypt require separate installation
    - Only PBKDF2 available by default
    - Iteration warnings are informational only
@@ -493,7 +557,7 @@ unified-security-toolkit/
 pip install <module_name>
 
 # Or install all dependencies
-pip install customtkinter scapy bleach beautifulsoup4 argon2-cffi bcrypt psutil
+pip install -r requirements.txt
 ```
 
 ### Network Capture Issues
@@ -511,6 +575,23 @@ pip install scapy
 pip install psutil
 # Then restart application with admin/root privileges
 ```
+
+### Network Performance Issues
+
+**Error: "psutil is not available"**
+```bash
+pip install psutil
+# Restart application
+```
+
+**Shows N/A for all values:**
+- Install psutil library
+- Check that network interfaces are active
+- Try running with elevated privileges
+
+**Connection count shows N/A:**
+- May require administrator/root privileges
+- Try running application with elevated privileges
 
 ### Port Scanner Issues
 
@@ -596,12 +677,14 @@ type %USERPROFILE%\.security_toolkit\logs\*.log  # Windows
 - Progress bars for long-running operations
 - Real-time character counters
 - Tooltips and inline help
+- Auto-refreshing statistics
 
 ### Results Display
 - Structured result cards
 - Searchable and filterable tables
 - Color-coded results (green for success, red for issues)
 - Scrollable content areas
+- Real-time updates
 
 ---
 
@@ -661,11 +744,11 @@ This software is provided "as is" without warranty of any kind. The authors are 
 ### Technologies Used
 - **CustomTkinter** - Modern GUI framework
 - **Scapy** - Network packet capture and analysis
+- **psutil** - System and network utilities
 - **bleach** - HTML sanitization
 - **BeautifulSoup** - HTML parsing
 - **Argon2** - Modern password hashing
 - **bcrypt** - Password hashing
-- **psutil** - System and network utilities
 
 ### Standards & Guidance
 - NIST SP 800-132 for PBKDF2 iteration recommendations
@@ -692,6 +775,7 @@ This software is provided "as is" without warranty of any kind. The authors are 
 ### Features from MS2
 - Network traffic analyzer
 - Port scanner
+- Network performance monitor
 - System monitoring capabilities
 
 ---
