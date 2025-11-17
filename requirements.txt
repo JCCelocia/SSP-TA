@@ -1,0 +1,73 @@
+# Unified Security Toolkit - Python Dependencies
+# ================================================
+# Course: MO-IT142 - Security Script Programming
+# Assessment: Terminal Assessment
+# Authors: Maricon Caluya and Jannine Claire Celocia
+
+# CORE DEPENDENCIES
+# -----------------
+# Modern GUI framework (required for all features)
+customtkinter>=5.0.0
+
+
+# LOCAL SECURITY FEATURES
+# -----------------------
+# Network packet capture and analysis (required for Network Traffic Analyzer)
+scapy>=2.4.5
+
+# System and network utilities (required for Network Performance Monitor)
+# Also provides enhanced network interface detection
+psutil>=5.8.0
+
+
+# WEB SECURITY FEATURES
+# ---------------------
+# HTML sanitization (recommended - industry standard)
+bleach>=5.0.0
+
+# HTML parsing and sanitization (alternative/fallback to bleach)
+beautifulsoup4>=4.9.0
+
+# HTML parser for BeautifulSoup
+lxml>=4.9.0
+
+
+# OPTIONAL ENHANCED KDF SUPPORT
+# ------------------------------
+# Modern memory-hard password hashing (optional, recommended)
+argon2-cffi>=21.3.0
+
+# Well-established password hashing (optional)
+bcrypt>=4.0.0
+
+
+# INSTALLATION NOTES
+# ------------------
+# Install all dependencies:
+#   pip install -r requirements.txt
+#
+# Minimum installation (GUI only):
+#   pip install customtkinter
+#
+# Local Security features only:
+#   pip install customtkinter scapy psutil
+#
+# Web Security features only:
+#   pip install customtkinter bleach beautifulsoup4 lxml
+#
+# PBKDF2 only (no Argon2/bcrypt):
+#   pip install customtkinter scapy psutil bleach beautifulsoup4 lxml
+#
+# SYSTEM REQUIREMENTS
+# -------------------
+# - Python 3.8 or higher
+# - Administrator/root privileges (for network packet capture)
+# - Operating System: Windows, Linux, or macOS
+#
+# TROUBLESHOOTING
+# ---------------
+# If installation fails, try installing in groups:
+#   pip install customtkinter
+#   pip install scapy psutil
+#   pip install bleach beautifulsoup4 lxml
+#   pip install argon2-cffi bcrypt
